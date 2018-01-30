@@ -5,22 +5,47 @@ from time import sleep
 
 import requests
 
-TELEGRAM_BOT_ID = 'Insert here your bot ID'
+TELEGRAM_BOT_ID = 'Insert here your telegram bot ID'
 
-LUIS_APP_KEY = ''
-LUIS_SUBSCRIPTION_KEY = ''
+LUIS_APP_KEY = 'Insert here your LUIS application key'
+LUIS_SUBSCRIPTION_KEY = 'Insert here subscription key for your application'
 
-YANDEX_WEATHER_API_KEY = ''
-YANDEX_TRANSLATE_API_KEY = ''
+YANDEX_WEATHER_API_KEY = 'Insert here your Yandex Weather API key'
+YANDEX_TRANSLATE_API_KEY = 'Insert here your Yandex Translate API key'
 
-OPEN_WEATHER_MAP_KEY = ''
+GOOGLE_GEO_ENCODING_API_KEY = 'Insert here your Google Geo API key'
 
-GOOGLE_GEO_ENCODING_API_KEY = ''
-
-BING_API_KEY = ''
+BING_API_KEY = 'Insert here your Bing API key'
 
 
 class TelegramBotInterface(object):
+    """
+    Class providing interface of a Telegram bot.
+    
+    Defined methods:
+    
+    __init__(self, bot_id)
+        Initialize bot with bot id.
+        
+    get_updates(self)
+        Get updates from Telegram server.
+        :return List of dict objects described in Telegram API help as Update.
+        
+    get_text_message(self, update)
+        Get text message from update.
+        :return String with text message.
+        
+    send_message(self, chat_id, text_message)
+        Send text message to chat with given id.
+        
+    send_photo(self, chat_id, photo_url)
+        Send photo taken by photo_url into a chat with given chat_id.
+        
+    get_chat_id(self, update)
+        Get chat id from object Update.
+        :return Integer representing chat id.
+        
+    """
     url = 'https://api.telegram.org/bot{bot_id}/{method}'
 
     def __init__(self, bot_id):
@@ -77,6 +102,38 @@ class TelegramBotInterface(object):
 
 
 class MessageHandler(object):
+    """
+    Class containing methods for parsing and processing incoming messages.
+    
+    Defined methods:
+    
+    __init__(self, luis_app, luis_subscription, yandex_weather, yandex_translate, google_geo, bing)
+        Initialize a new message handler. To gain full functionality all keys must be provided.
+        
+    __call__(self, text_message)
+        Handle the message :)
+        :return Object of class Response with filled fields.
+        
+    analyze_message(self, text_message)
+        Analyze given message via LUIS system.
+        :return Dict object with intention and entities.
+        
+    translate_text(self, text_message)
+        Translate text from any language into English via Yandex Transalte.
+        :return String containing translated message.
+        
+    get_weather(self, city, time)
+        Make weather request to Yandex Weather.
+        :return Dict object with weather data.
+    
+    get_picture(self, search_request)
+        Make search request to Bing API.
+        :return URL linking to random chosen picture from top eight of Bing response.
+        
+    get_poem(self, weather)
+        Not implemented.
+        
+    """
     help_string = 'This multilanguage bot is to provide you information about current ' \
                   'weather or weather forecast in a region whatever you want. The bot ' \
                   'does not require any specific form of requests and it' \
@@ -141,7 +198,7 @@ class MessageHandler(object):
         self.google_geo_encoding_api_key = google_geo
         self.bing_api_key = bing
 
-    def parse_message(self, text_message):
+    def analyze_message(self, text_message):
         params = {
             'app_key': LUIS_APP_KEY,
             'subscription_key': LUIS_SUBSCRIPTION_KEY,
@@ -237,7 +294,7 @@ class MessageHandler(object):
         if text_message.strip() == '/help':
             return self.Response(self.help_string)
         translated_message = self.translate_text(text_message)
-        sense_of_message = self.parse_message(translated_message)
+        sense_of_message = self.analyze_message(translated_message)
         if sense_of_message['topScoringIntent']['intent'] == 'Greeting':
             return self.Response(self.greetings[randint(0, len(self.greetings) - 1)])
         elif sense_of_message['topScoringIntent']['intent'] == 'Parting':
@@ -327,8 +384,9 @@ class MessageHandler(object):
                 temp=day_forecast['temp'],
                 feels_like=day_forecast['feels_like'],
                 humidity=day_forecast['humidity'],
-                obs=self.translate_text('Наблюдается '
-                                        + weather_api_ans['l10n'][day_forecast['condition']])
+                obs=self.translate_text(
+                    'Наблюдается ' + weather_api_ans['l10n'][day_forecast['condition']]
+                )
             )
 
             try:
