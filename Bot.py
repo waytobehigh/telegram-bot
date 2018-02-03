@@ -13,7 +13,7 @@ LUIS_SUBSCRIPTION_KEY = 'Insert here subscription key for your application'
 YANDEX_WEATHER_API_KEY = 'Insert here your Yandex Weather API key'
 YANDEX_TRANSLATE_API_KEY = 'Insert here your Yandex Translate API key'
 
-GOOGLE_GEO_ENCODING_API_KEY = 'Insert here your Google Geo API key'
+GOOGLE_GEO_ENCODING_API_KEY = 'Insert here your Google Geolocation API key'
 
 BING_API_KEY = 'Insert here your Bing API key'
 
@@ -46,17 +46,21 @@ class TelegramBotInterface(object):
         :return Integer representing chat id.
         
     """
-    url = 'https://api.telegram.org/bot{bot_id}/{method}'
+    url = 'https://api.telegram.org/bot{bot_id}/'
 
     def __init__(self, bot_id):
         self.id = bot_id
         self.offset = 0
 
-    def get_updates(self):
-        request_url = self.url.format(bot_id=TELEGRAM_BOT_ID, method='getUpdates')
-        params = {'offset': self.offset}
+        self.url = self.url.format(bot_id=self.id)
 
-        updates = requests.get(request_url, data=params)
+    def get_updates(self):
+        request_url = self.url + 'getUpdates'
+        params = {
+            'offset': self.offset
+        }
+
+        updates = requests.get(request_url, params)
 
         if updates.status_code != 200:
             updates.raise_for_status()
@@ -72,29 +76,21 @@ class TelegramBotInterface(object):
         return update['message']['text']
 
     def send_message(self, chat_id, text_message):
-        params = {
-            'bot_id': TELEGRAM_BOT_ID,
-            'method': 'sendMessage'
-        }
-        request_url = self.url.format(**params)
-
+        request_url = self.url + 'sendMessage'
         data = {
             'chat_id': chat_id,
             'text': text_message
         }
+
         return requests.post(request_url, data)
 
     def send_photo(self, chat_id, photo_url):
-        params = {
-            'bot_id': TELEGRAM_BOT_ID,
-            'method': 'sendPhoto'
-        }
-        request_url = self.url.format(**params)
-
+        request_url = self.url + 'sendPhoto'
         data = {
             'chat_id': chat_id,
             'photo': photo_url
         }
+
         return requests.post(request_url, data)
 
     def get_chat_id(self, update):
@@ -163,22 +159,14 @@ class MessageHandler(object):
         'I do not really understand what you meant by that.'
     ]
 
-    yandex_weather_url = 'https://api.weather.yandex.ru/v1/forecast?' \
-                         'lat={lat}&lon={lng}&limit={limit}&l10n=true'
+    luis_api_url = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/{app_key}'
 
-    luis_api_url = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/' \
-                   '{app_key}?subscription-key={subscription_key}&q={query}'
+    yandex_translate_url = 'https://translate.yandex.net/api/v1.5/tr.json/translate'
+    yandex_weather_url = 'https://api.weather.yandex.ru/v1/forecast'
 
-    yandex_translate_url = 'https://translate.yandex.net/api/v1.5/' \
-                           'tr.json/translate?' \
-                           'key={key}' \
-                           '&text={text}' \
-                           '&lang={lang_to}'
+    bing_api_url = 'https://api.cognitive.microsoft.com/bing/v7.0/images/search?%s'
 
-    open_weather_map_url = 'http://api.openweathermap.org/data/2.5/weather?q={query}&APPID={api_key}'
-
-    google_geo_encoding_url = 'https://maps.googleapis.com/maps/api/geocode/json?' \
-                              'address={address}&key={api_key}'
+    google_geo_encoding_url = 'https://maps.googleapis.com/maps/api/geocode/json'
 
     class LocationNotFound(Exception):
         pass
@@ -198,15 +186,15 @@ class MessageHandler(object):
         self.google_geo_encoding_api_key = google_geo
         self.bing_api_key = bing
 
+        self.luis_api_url = self.luis_api_url.format(app_key=self.luis_app_key)
+
     def analyze_message(self, text_message):
         params = {
-            'app_key': LUIS_APP_KEY,
-            'subscription_key': LUIS_SUBSCRIPTION_KEY,
-            'query': text_message
+            'subscription-key': self.luis_subscription_key,
+            'q': text_message
         }
 
-        request_url = self.luis_api_url.format(**params)
-        response = requests.get(request_url)
+        response = requests.get(self.luis_api_url, params)
 
         if response.status_code != 200:
             response.raise_for_status()
@@ -217,11 +205,10 @@ class MessageHandler(object):
         params = {
             'key': self.yandex_translate_api_key,
             'text': text_message,
-            'lang_to': 'en'
+            'lang': 'en'
         }
 
-        request_url = self.yandex_translate_url.format(**params)
-        response = requests.get(request_url)
+        response = requests.get(self.yandex_translate_url, params)
 
         if response.status_code != 200:
             response.raise_for_status()
@@ -232,9 +219,9 @@ class MessageHandler(object):
 
         params = {
             'address': city,
-            'api_key': self.google_geo_encoding_api_key
+            'key': self.google_geo_encoding_api_key
         }
-        response = requests.get(self.google_geo_encoding_url.format(**params))
+        response = requests.get(self.google_geo_encoding_url, params)
 
         if response.status_code != 200:
             response.raise_for_status()
@@ -248,7 +235,14 @@ class MessageHandler(object):
             'X-Yandex-API-Key': self.yandex_weather_api_key
         }
 
-        response = requests.get(self.yandex_weather_url.format(**location, limit=time), headers=headers)
+        params = {
+            'lat': location['lat'],
+            'lng': location['lng'],
+            'limit': time,
+            'l10n': 'true'
+        }
+
+        response = requests.get(params=params, headers=headers)
 
         if response.status_code != 200:
             response.raise_for_status()
@@ -269,7 +263,7 @@ class MessageHandler(object):
         }
 
         response = requests.get(
-            "https://api.cognitive.microsoft.com/bing/v7.0/images/search?%s",
+            self.bing_api_url,
             params=params,
             headers=headers
         )
@@ -288,7 +282,7 @@ class MessageHandler(object):
         return picture_url
 
     def get_poem(self, weather):
-        pass
+        raise NotImplementedError
 
     def __call__(self, text_message):
         if text_message.strip() == '/help':
@@ -352,7 +346,7 @@ class MessageHandler(object):
                                            'it feels like {feels_like} degrees. ' \
                                            '{obs}.' \
                                            '\n{pressure_str}' \
-                                           '\nHumidity - {humidity}%' \
+                                           '\nHumidity - {humidity}%'
 
             pressure_str_if_eq = 'Pressure is the same as normal and equals {curr_pressure}'
             pressure_str_if_diff = 'Pressure is {pressure_comp} than normal ' \
@@ -414,18 +408,15 @@ if __name__ == '__main__':
     )
 
     while True:
-        try:
-            updates = bot_interface.get_updates()
-            for update in updates:
-                text_message = bot_interface.get_text_message(update)
-                response_message = handler(text_message)
-                bot_interface.send_message(chat_id=bot_interface.get_chat_id(update),
-                                           text_message=response_message.text)
-                if response_message.photo is not None:
-                    bot_interface.send_photo(chat_id=bot_interface.get_chat_id(update),
-                                             photo_url=response_message.photo)
-                if response_message.poem is not None:
-                    pass
-        except Exception:
-            pass
+        updates = bot_interface.get_updates()
+        for update in updates:
+            text_message = bot_interface.get_text_message(update)
+            response_message = handler(text_message)
+            bot_interface.send_message(chat_id=bot_interface.get_chat_id(update),
+                                       text_message=response_message.text)
+            if response_message.photo is not None:
+                bot_interface.send_photo(chat_id=bot_interface.get_chat_id(update),
+                                         photo_url=response_message.photo)
+            if response_message.poem is not None:
+                pass
         sleep(2)
