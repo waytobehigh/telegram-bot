@@ -2,6 +2,13 @@
 
 Just simple weather bot for Telegram :)
 
+## Properties
+
+* Maintainance of requests on arbitary language
+* Attaches pictures corresponding to weather in searched city
+* Some user-friendly dialog fuctions as greetings/partings
+* Adequate response to incorrect requests
+
 ## Built With
 
 The bot based on following API:
@@ -14,13 +21,13 @@ The bot based on following API:
 
 ## Examples
 
-You can find some dialogs with bot in the directory Screenshots.
+You can find some dialogs with bot in the directory Screenshots
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+This project is licensed under the MIT License - see the LICENSE.md file for details
 
 ## Acknowledgments
 
-Thanks [Philip Sinitsyn](https://github.com/discobot) for wonderful Python lectures at Yandex Data Science School.
+Thanks [Philip Sinitsyn](https://github.com/discobot) for wonderful Python lectures at Yandex Data Science School
 
