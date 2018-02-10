@@ -2,7 +2,7 @@
 
 Just simple weather bot for Telegram :)
 
-## Properties
+## Features
 
 * Maintainance of requests on arbitary language
 * Attaches pictures corresponding to weather in searched city
