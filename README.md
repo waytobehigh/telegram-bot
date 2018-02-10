@@ -11,7 +11,7 @@ Just simple weather bot for Telegram :)
 
 ## Built With
 
-The bot based on following API:
+The bot is based on following API:
 * [Telegram Web API](https://core.telegram.org/bots/api)
 * [Microsoft LUIS API](https://westus.dev.cognitive.microsoft.com/docs/services/5890b47c39e2bb17b84a55ff/operations/5890b47c39e2bb052c5b9c2f)
 * [Yandex Weather API](https://tech.yandex.com/weather/doc/dg/concepts/about-docpage/)
