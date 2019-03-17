@@ -1,6 +1,6 @@
 # Weather Bot
 
-Just a simple weather bot for Telegram :)
+Just a simple weather bot for Telegram written in Python
 
 ## Features
 
